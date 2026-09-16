@@ -26,6 +26,7 @@
     --known-fill: #3E6B45;
     --tough: #DC8271;
     --tough-text: #E29A8B;
+    --marker-red: #C0392B;
     --plate-bg: #FFFFFF;
     --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
     --font-sans: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -279,12 +280,13 @@
   }
   .plate-well .term-target .term-star { display: none !important; }
   .overlay-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-  .overlay-svg rect, .overlay-svg circle { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .overlay-svg line, .overlay-svg polyline { stroke: var(--accent); stroke-width: 3; fill: none; vector-effect: non-scaling-stroke; }
+  .overlay-svg rect, .overlay-svg circle { fill: none; stroke: var(--marker-red); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .overlay-svg line, .overlay-svg polyline { stroke: var(--marker-red); stroke-width: 3; fill: none; vector-effect: non-scaling-stroke; }
 
   .answer-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
   .answer-term { font: 600 26px var(--font-serif); color: var(--ink); }
   .mnemonic { font: italic 400 13.5px var(--font-serif); color: var(--known-text); margin-top: 2px; }
+  .marker-note { font-style: italic; color: var(--marker-red); }
 
   .answer-row { display: flex; gap: 10px; margin-top: 16px; }
   .answer-input-wrap { position: relative; flex: 1; }
@@ -609,7 +611,7 @@ let marks = {}; // id -> 'easy' | 'hard'
 let prefs = {
   mode: 'typein',
   activeCategories: ALL_CATEGORIES.slice(),
-  hideEasy: false,
+  hideEasy: true,
   toughOnly: false,
   expandedBuckets: [],
 };
@@ -686,11 +688,17 @@ function rebuildOrder(preserveOrder) {
   } else {
     state.order = ids;
   }
+  let newPos;
   if (currentId !== undefined && state.order.includes(currentId)) {
-    state.pos = state.order.indexOf(currentId);
+    newPos = state.order.indexOf(currentId);
   } else {
-    state.pos = Math.min(state.pos, Math.max(state.order.length - 1, 0));
+    newPos = Math.min(state.pos, Math.max(state.order.length - 1, 0));
   }
+  // A filter/mark change can silently swap in a different card at the same
+  // position (e.g. the current card got hidden by "Hide easy") — clear any
+  // in-progress answer/MC state so it doesn't get shown against the wrong card.
+  if (state.order[newPos] !== currentId) resetInteraction();
+  state.pos = newPos;
 }
 
 function resetInteraction() {
@@ -890,6 +898,14 @@ function gradeButtonsHtml(card) {
   </div>`;
 }
 
+function definitionHtml(card) {
+  if (prefs.mode === 'imageonly') return '';
+  const promptClass = state.revealed ? 'prompt dim' : 'prompt';
+  const hasRedMarker = card.type === 'marker' && card.marker && card.marker.trim();
+  const note = hasRedMarker ? ' <em class="marker-note">Indicated by red</em>' : '';
+  return `<div class="${promptClass}">${card.definition}${note}</div>`;
+}
+
 function computeResultInfo() {
   if (state.revealed && prefs.mode === 'typein') {
     return state.typedCorrect
@@ -916,8 +932,7 @@ function renderCard() {
       <div class="meta-left"><span class="eyebrow-chip">${escapeHtml(card.category)}</span>${resultChip}</div>
       ${gradeButtonsHtml(card)}
     </div>`;
-  const promptClass = state.revealed ? 'prompt dim' : 'prompt';
-  const defHtml = prefs.mode === 'imageonly' ? '' : `<div class="${promptClass}">${card.definition}</div>`;
+  const defHtml = definitionHtml(card);
   const imageHtml = renderImage(card, state.revealed);
 
   let bottomHtml = '';
@@ -1020,8 +1035,7 @@ function renderMobileBody() {
   const result = computeResultInfo();
   const resultChip = result ? `<span class="result-chip ${result.chip}">${result.label}</span>` : '';
 
-  const promptClass = state.revealed ? 'prompt dim' : 'prompt';
-  const defHtml = prefs.mode === 'imageonly' ? '' : `<div class="${promptClass}">${card.definition}</div>`;
+  const defHtml = definitionHtml(card);
   const imageHtml = renderImage(card, state.revealed);
 
   let bottomHtml = '';
