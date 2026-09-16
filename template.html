@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Skeletal System — Lab Exam Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,6 +41,7 @@
     color: var(--ink);
     font-family: var(--font-sans);
     min-height: 100%;
+    touch-action: manipulation;
   }
 
   body { padding: 20px 16px 56px; }
@@ -123,14 +124,14 @@
     color: var(--known-text);
     font-weight: 600;
   }
-  #toughOnlyBtn[data-active="true"] {
+  .tough-toggle[data-active="true"] {
     border-color: rgba(220,130,113,.55);
     background: rgba(220,130,113,.18);
     color: var(--tough-text);
     font-weight: 600;
     box-shadow: 0 0 0 1px rgba(220,130,113,.3) inset;
   }
-  #toughOnlyBtn[data-active="true"] .tough-dot { background: var(--tough-text); }
+  .tough-toggle[data-active="true"] .tough-dot { background: var(--tough-text); }
   .hamburger { display: flex; flex-direction: column; gap: 3px; }
   .hamburger span { width: 12px; height: 1.5px; background: currentColor; display: block; }
   .tough-dot { width: 7px; height: 7px; border-radius: 9px; background: var(--tough); flex: none; }
@@ -343,6 +344,108 @@
     border-radius: 4px; margin: 0 6px 0 0;
   }
   .hint span + span { margin-left: 16px; }
+
+  /* ================= mobile study screen ================= */
+  .mobile-shell { display: none; }
+  @media (max-width: 700px) {
+    .shell { display: none; }
+    .mobile-shell {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      inset: 0;
+      background: var(--ground);
+      z-index: 10;
+    }
+  }
+
+  .mobile-topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 16px 10px; flex: none;
+  }
+  .mobile-icon-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--ink); padding: 6px; line-height: 0; flex: none;
+  }
+  .mobile-counter {
+    margin-left: auto;
+    font: 500 13px var(--font-mono); color: var(--ink-70); letter-spacing: .04em; flex: none;
+  }
+  .mobile-segbar-row { display: flex; gap: 3px; padding: 0 16px 14px; flex: none; }
+  .mobile-seg { flex: 1; height: 4px; border-radius: 3px; background: rgba(242,234,221,.14); }
+  .mobile-seg.known { background: var(--known); }
+  .mobile-seg.tough { background: var(--tough); }
+  .mobile-seg.current { background: var(--accent); }
+
+  .mobile-body {
+    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 0 16px 110px;
+  }
+  .mobile-nav-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 0 14px;
+  }
+  .mobile-navlink {
+    background: none; border: none; cursor: pointer;
+    font: 500 12.5px var(--font-sans); color: var(--ink-45); padding: 4px 0;
+  }
+  .mobile-navlink:hover { color: var(--accent); }
+  .mobile-eyebrow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  .mobile-body .prompt { font-size: 19px; }
+  .mobile-body .plate-well {
+    width: calc(100% + 32px);
+    margin-left: -16px; margin-right: -16px;
+    max-width: none; border-radius: 0;
+    margin-bottom: 16px;
+  }
+  .mobile-body .answer-row { flex-direction: column; }
+  .mobile-body .check-btn { width: 100%; }
+  .mobile-body .mc-grid { grid-template-columns: 1fr; }
+  .mobile-body .show-answer-row .pill-primary { width: 100%; }
+
+  .mobile-grade-row {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    display: flex; gap: 10px;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--ground) 65%, transparent);
+    z-index: 5;
+  }
+  .mobile-grade-btn {
+    flex: 1; height: 52px; border-radius: 10px; cursor: pointer;
+    font: 600 14.5px var(--font-sans);
+  }
+  .mobile-grade-btn.tough {
+    background: rgba(220,130,113,.14); border: 1px solid rgba(220,130,113,.45); color: var(--tough-text);
+  }
+  .mobile-grade-btn.easy {
+    background: var(--known); border: none; color: var(--ground); flex: 1.3;
+  }
+
+  .mobile-sheet-backdrop { display: none; }
+  .mobile-sheet-backdrop.show {
+    display: block; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 20;
+  }
+  .mobile-sheet {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 84vw; max-width: 320px;
+    background: var(--surface);
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 21;
+    overflow-y: auto;
+    padding: 18px 16px;
+  }
+  .mobile-sheet.open { transform: translateX(0); }
+  .mobile-sheet-section { margin-bottom: 20px; }
+  .mobile-sheet-section .segmented { width: 100%; height: auto; flex-direction: column; }
+  .mobile-sheet-section .segmented button {
+    padding: 12px 14px; text-align: left; border-left: none;
+    border-top: 1px solid rgba(242,234,221,.14);
+  }
+  .mobile-sheet-section .segmented button:first-child { border-top: none; }
+  .mobile-sheet-actions { display: flex; flex-direction: column; gap: 8px; }
+  .mobile-sheet-actions .tbtn { width: 100%; justify-content: flex-start; }
 </style>
 </head>
 <body>
@@ -378,7 +481,7 @@
         </div>
         <div class="spacer"></div>
         <button class="tbtn" id="shuffleBtn" title="Shuffle (S)">Shuffle</button>
-        <button class="tbtn" id="toughOnlyBtn" title="Show only cards marked tough">
+        <button class="tbtn tough-toggle" id="toughOnlyBtn" title="Show only cards marked tough">
           <span class="tough-dot"></span>Review tough <span class="count" id="toughCount"></span>
         </button>
         <button class="tbtn" id="hideEasyBtn" data-active="false" title="Hide cards marked easy">Hide easy</button>
@@ -405,6 +508,47 @@
           </p>
         </div>
       </div>
+  </div>
+
+  <div class="mobile-shell" id="mobileShell">
+    <div class="mobile-sheet-backdrop" id="mobileSheetBackdrop"></div>
+    <aside class="mobile-sheet" id="mobileSheet">
+      <div class="rail-head">
+        <h2>Study Options</h2>
+        <button type="button" class="mobile-icon-btn" id="mobileSheetClose" aria-label="Close menu">&#10005;</button>
+      </div>
+      <div class="mobile-sheet-section">
+        <div class="segmented" id="modeSwitchMobile" role="tablist">
+          <button type="button" data-mode="typein" role="tab">Type in Answer</button>
+          <button type="button" data-mode="mc" role="tab">Multiple Choice</button>
+          <button type="button" data-mode="quick" role="tab">Quick Study</button>
+          <button type="button" data-mode="imageonly" role="tab">Image Only</button>
+        </div>
+      </div>
+      <div class="mobile-sheet-section mobile-sheet-actions">
+        <button class="tbtn" id="shuffleBtnMobile" title="Shuffle">Shuffle</button>
+        <button class="tbtn tough-toggle" id="toughOnlyBtnMobile" title="Show only cards marked tough">
+          <span class="tough-dot"></span>Review tough <span class="count"></span>
+        </button>
+        <button class="tbtn" id="hideEasyBtnMobile" data-active="false" title="Hide cards marked easy">Hide easy</button>
+      </div>
+      <div class="mobile-sheet-section">
+        <div class="rail-head">
+          <h2>Categories</h2>
+          <div class="rail-actions"><button id="catAllBtnMobile">ALL</button><button id="catNoneBtnMobile">NONE</button></div>
+        </div>
+        <div class="cat-list" id="catListMobile"></div>
+      </div>
+    </aside>
+
+    <div class="mobile-topbar">
+      <button type="button" class="mobile-icon-btn" id="mobileMenuBtn" aria-label="Open menu">
+        <span class="hamburger"><span></span><span></span><span></span></span>
+      </button>
+      <div class="mobile-counter" id="mobileCounter">— / —</div>
+    </div>
+    <div class="mobile-segbar-row" id="mobileSegbar"></div>
+    <div class="mobile-body" id="mobileBody"></div>
   </div>
 
 </div>
@@ -497,6 +641,9 @@ function saveStorage() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ marks, prefs })); } catch (e) { /* ignore */ }
 }
 loadStorage();
+
+const MOBILE_QUERY = window.matchMedia('(max-width: 700px)');
+function isMobile() { return MOBILE_QUERY.matches; }
 
 const state = {
   order: [],
@@ -669,7 +816,11 @@ function toggleExpanded(bucketName) {
 }
 
 function renderSidebar() {
-  const list = document.getElementById('catList');
+  renderCategoryListInto(document.getElementById('catList'));
+  renderCategoryListInto(document.getElementById('catListMobile'));
+}
+
+function renderCategoryListInto(list) {
   list.innerHTML = '';
   for (const bucket of BUCKETS) {
     const total = bucket.categories.reduce((sum, c) => sum + categoryCount(c), 0);
@@ -739,20 +890,26 @@ function gradeButtonsHtml(card) {
   </div>`;
 }
 
+function computeResultInfo() {
+  if (state.revealed && prefs.mode === 'typein') {
+    return state.typedCorrect
+      ? { chip: 'correct', label: 'CORRECT' }
+      : { chip: 'incorrect', label: 'INCORRECT' };
+  }
+  if (state.revealed && prefs.mode === 'mc' && state.mc) {
+    const gotIt = state.mc.selectedIndex !== null && state.mc.options[state.mc.selectedIndex]?.correct;
+    return gotIt ? { chip: 'correct', label: 'CORRECT' } : { chip: 'incorrect', label: 'INCORRECT' };
+  }
+  return null;
+}
+
 function renderCard() {
   const area = document.getElementById('cardArea');
   const card = getCardById(state.order[state.pos]);
 
-  let resultChip = '';
-  let cardStateClass = '';
-  if (state.revealed && prefs.mode === 'typein') {
-    resultChip = `<span class="result-chip ${state.typedCorrect ? 'correct' : 'incorrect'}">${state.typedCorrect ? 'CORRECT' : 'INCORRECT'}</span>`;
-    cardStateClass = state.typedCorrect ? ' is-correct' : ' is-incorrect';
-  } else if (state.revealed && prefs.mode === 'mc' && state.mc) {
-    const gotIt = state.mc.selectedIndex !== null && state.mc.options[state.mc.selectedIndex]?.correct;
-    resultChip = `<span class="result-chip ${gotIt ? 'correct' : 'incorrect'}">${gotIt ? 'CORRECT' : 'INCORRECT'}</span>`;
-    cardStateClass = gotIt ? ' is-correct' : ' is-incorrect';
-  }
+  const result = computeResultInfo();
+  const resultChip = result ? `<span class="result-chip ${result.chip}">${result.label}</span>` : '';
+  const cardStateClass = result ? (result.chip === 'correct' ? ' is-correct' : ' is-incorrect') : '';
 
   const topHtml = `
     <div class="card-meta">
@@ -845,16 +1002,75 @@ function renderMcBottom(card) {
   return `<div class="mc-grid">${optsHtml}</div>${reveal}`;
 }
 
+function renderMobileSegbar() {
+  const bar = document.getElementById('mobileSegbar');
+  bar.innerHTML = state.order.map((id, i) => {
+    let cls = 'mobile-seg';
+    if (i === state.pos) cls += ' current';
+    else if (marks[id] === 'easy') cls += ' known';
+    else if (marks[id] === 'hard') cls += ' tough';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function renderMobileBody() {
+  const body = document.getElementById('mobileBody');
+  const card = getCardById(state.order[state.pos]);
+
+  const result = computeResultInfo();
+  const resultChip = result ? `<span class="result-chip ${result.chip}">${result.label}</span>` : '';
+
+  const promptClass = state.revealed ? 'prompt dim' : 'prompt';
+  const defHtml = prefs.mode === 'imageonly' ? '' : `<div class="${promptClass}">${card.definition}</div>`;
+  const imageHtml = renderImage(card, state.revealed);
+
+  let bottomHtml = '';
+  if (prefs.mode === 'typein') {
+    bottomHtml = renderTypeInBottom(card);
+  } else if (prefs.mode === 'mc') {
+    bottomHtml = renderMcBottom(card);
+  } else {
+    bottomHtml = renderFlipBottom(card);
+  }
+
+  const gradeRowHtml = state.revealed ? `
+    <div class="mobile-grade-row">
+      <button class="mobile-grade-btn tough" id="mobileToughBtn">Tough</button>
+      <button class="mobile-grade-btn easy" id="mobileEasyBtn">Easy — next</button>
+    </div>` : '';
+
+  body.innerHTML = `
+    <div class="mobile-nav-row">
+      <button class="mobile-navlink" id="prevBtn">&lsaquo; Prev</button>
+      <button class="mobile-navlink" id="nextBtn">Skip &rsaquo;</button>
+    </div>
+    <div class="mobile-eyebrow-row"><span class="eyebrow-chip">${escapeHtml(card.category)}</span>${resultChip}</div>
+    ${defHtml}
+    ${imageHtml}
+    ${bottomHtml}
+    ${gradeRowHtml}
+  `;
+  attachCardHandlers(card);
+  attachMobileGradeRow(card);
+}
+
+function attachMobileGradeRow(card) {
+  const toughBtn = document.getElementById('mobileToughBtn');
+  const easyBtn = document.getElementById('mobileEasyBtn');
+  if (toughBtn) toughBtn.addEventListener('click', () => { toggleMark(card.id, 'hard'); goNext(); });
+  if (easyBtn) easyBtn.addEventListener('click', () => { toggleMark(card.id, 'easy'); goNext(); });
+}
+
 function attachCardHandlers(card) {
   const showBtn = document.getElementById('showAnswerBtn');
-  if (showBtn) showBtn.addEventListener('click', () => { state.revealed = true; renderCard(); });
+  if (showBtn) showBtn.addEventListener('click', () => { state.revealed = true; render(); });
 
   const hideBtn = document.getElementById('hideAnswerBtn');
   if (hideBtn) hideBtn.addEventListener('click', () => {
     state.revealed = false;
     state.typedChecked = false;
     if (state.mc) state.mc.selectedIndex = null;
-    renderCard();
+    render();
   });
 
   const checkBtn = document.getElementById('checkBtn');
@@ -865,14 +1081,14 @@ function attachCardHandlers(card) {
       state.typedChecked = true;
       state.typedCorrect = normalize(state.typedValue) === normalize(card.term);
       state.revealed = true;
-      renderCard();
+      render();
     };
     checkBtn.addEventListener('click', doCheck);
     typeInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); doCheck(); }
     });
     typeInput.addEventListener('input', (e) => { state.typedValue = e.target.value; });
-    typeInput.focus();
+    if (!isMobile()) typeInput.focus();
   }
 
   document.querySelectorAll('.mc-option').forEach(btn => {
@@ -880,7 +1096,7 @@ function attachCardHandlers(card) {
       const idx = parseInt(btn.getAttribute('data-idx'), 10);
       state.mc.selectedIndex = idx;
       state.revealed = true;
-      renderCard();
+      render();
     });
   });
 
@@ -917,95 +1133,147 @@ function goPrev() {
 }
 
 function updateControlBar() {
-  document.querySelectorAll('#modeSwitch button').forEach(btn => {
+  document.querySelectorAll('#modeSwitch button, #modeSwitchMobile button').forEach(btn => {
     btn.setAttribute('aria-selected', String(btn.getAttribute('data-mode') === prefs.mode));
   });
-  document.getElementById('hideEasyBtn').setAttribute('data-active', String(prefs.hideEasy));
-  document.getElementById('hideEasyBtn').textContent = prefs.hideEasy ? '✓ Hide easy' : 'Hide easy';
+
+  const hideEasyLabel = prefs.hideEasy ? '✓ Hide easy' : 'Hide easy';
+  ['hideEasyBtn', 'hideEasyBtnMobile'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.setAttribute('data-active', String(prefs.hideEasy));
+    btn.textContent = hideEasyLabel;
+  });
 
   const toughInPool = CARDS.filter(c => prefs.activeCategories.includes(c.category) && marks[c.id] === 'hard').length;
-  const toughBtn = document.getElementById('toughOnlyBtn');
-  toughBtn.setAttribute('data-active', String(prefs.toughOnly));
-  toughBtn.innerHTML = prefs.toughOnly
+  const toughHtml = prefs.toughOnly
     ? `✓ Reviewing tough only <span class="count">${toughInPool}</span>`
     : `<span class="tough-dot"></span>Review tough <span class="count">${toughInPool}</span>`;
+  ['toughOnlyBtn', 'toughOnlyBtnMobile'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.setAttribute('data-active', String(prefs.toughOnly));
+    btn.innerHTML = toughHtml;
+  });
 }
 
 function render() {
   renderSidebar();
   updateControlBar();
-  const area = document.getElementById('cardArea');
-  const plateCount = document.getElementById('plateCount');
-  const progressKnown = document.getElementById('progressKnown');
-  const progressTough = document.getElementById('progressTough');
-  const tally = document.getElementById('tally');
 
-  // Mastery bar reflects every card in the active categories — including
-  // ones currently hidden from the queue by "Hide easy" — not just what's
-  // in the filtered run.
+  // Mastery bar (desktop) reflects every card in the active categories —
+  // including ones currently hidden from the queue by "Hide easy" — not
+  // just what's in the filtered run.
   const activePool = CARDS.filter(c => prefs.activeCategories.includes(c.category));
   const activeTotal = activePool.length || 1;
   const activeKnown = activePool.filter(c => marks[c.id] === 'easy').length;
   const activeTough = activePool.filter(c => marks[c.id] === 'hard').length;
-  progressKnown.style.width = `${(activeKnown / activeTotal) * 100}%`;
-  progressTough.style.width = `${(activeTough / activeTotal) * 100}%`;
+  document.getElementById('progressKnown').style.width = `${(activeKnown / activeTotal) * 100}%`;
+  document.getElementById('progressTough').style.width = `${(activeTough / activeTotal) * 100}%`;
+
+  const mobile = isMobile();
+  const cardArea = document.getElementById('cardArea');
+  const mobileBody = document.getElementById('mobileBody');
 
   if (!state.order.length) {
-    plateCount.innerHTML = '0 <span class="of">/ 0</span>';
-    tally.innerHTML = '';
     let msg = 'No cards match the current filters.';
     if (prefs.toughOnly) msg = 'No cards marked tough yet — mark a few as you review.';
     else if (!prefs.activeCategories.length) msg = 'No categories selected — open Categories to pick some.';
-    area.innerHTML = `<div class="card empty-state"><h2>Nothing to review</h2><p>${msg}</p></div>`;
+    const emptyInner = `<h2>Nothing to review</h2><p>${msg}</p>`;
+
+    if (mobile) {
+      cardArea.innerHTML = '';
+      document.getElementById('mobileCounter').textContent = '0 / 0';
+      document.getElementById('mobileSegbar').innerHTML = '';
+      mobileBody.innerHTML = `<div class="empty-state">${emptyInner}</div>`;
+    } else {
+      mobileBody.innerHTML = '';
+      document.getElementById('plateCount').innerHTML = '0 <span class="of">/ 0</span>';
+      document.getElementById('tally').innerHTML = '';
+      cardArea.innerHTML = `<div class="card empty-state">${emptyInner}</div>`;
+    }
     return;
   }
 
-  plateCount.innerHTML = `${state.pos + 1} <span class="of">/ ${state.order.length}</span>`;
   const known = state.order.filter(id => marks[id] === 'easy').length;
   const tough = state.order.filter(id => marks[id] === 'hard').length;
-  tally.innerHTML = `<span class="known">${known} KNOWN</span><span class="tough">${tough} TOUGH</span>`;
-  renderCard();
+
+  if (mobile) {
+    cardArea.innerHTML = '';
+    document.getElementById('mobileCounter').textContent = `${state.pos + 1} / ${state.order.length}`;
+    renderMobileSegbar();
+    renderMobileBody();
+  } else {
+    mobileBody.innerHTML = '';
+    document.getElementById('plateCount').innerHTML = `${state.pos + 1} <span class="of">/ ${state.order.length}</span>`;
+    document.getElementById('tally').innerHTML = `<span class="known">${known} KNOWN</span><span class="tough">${tough} TOUGH</span>`;
+    renderCard();
+  }
 }
 
 /* ---------- Wire up controls ---------- */
 document.getElementById('categoriesBtn').addEventListener('click', openSidebar);
 document.getElementById('backdrop').addEventListener('click', closeSidebar);
-document.getElementById('catAllBtn').addEventListener('click', () => {
+
+function handleCatAll() {
   prefs.activeCategories = ALL_CATEGORIES.slice();
   saveStorage();
   rebuildOrder(true);
   render();
-});
-document.getElementById('catNoneBtn').addEventListener('click', () => {
+}
+function handleCatNone() {
   prefs.activeCategories = [];
   saveStorage();
   rebuildOrder(true);
   render();
-});
+}
+document.getElementById('catAllBtn').addEventListener('click', handleCatAll);
+document.getElementById('catAllBtnMobile').addEventListener('click', handleCatAll);
+document.getElementById('catNoneBtn').addEventListener('click', handleCatNone);
+document.getElementById('catNoneBtnMobile').addEventListener('click', handleCatNone);
 
-document.querySelectorAll('#modeSwitch button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    prefs.mode = btn.getAttribute('data-mode');
-    saveStorage();
-    resetInteraction();
-    render();
-  });
+function handleModeButtonClick(e) {
+  prefs.mode = e.currentTarget.getAttribute('data-mode');
+  saveStorage();
+  resetInteraction();
+  render();
+}
+document.querySelectorAll('#modeSwitch button, #modeSwitchMobile button').forEach(btn => {
+  btn.addEventListener('click', handleModeButtonClick);
 });
 
 document.getElementById('shuffleBtn').addEventListener('click', shuffleOrder);
+document.getElementById('shuffleBtnMobile').addEventListener('click', shuffleOrder);
 
-document.getElementById('toughOnlyBtn').addEventListener('click', () => {
+function handleToughToggle() {
   prefs.toughOnly = !prefs.toughOnly;
   saveStorage();
   rebuildOrder(true);
   render();
-});
-document.getElementById('hideEasyBtn').addEventListener('click', () => {
+}
+document.getElementById('toughOnlyBtn').addEventListener('click', handleToughToggle);
+document.getElementById('toughOnlyBtnMobile').addEventListener('click', handleToughToggle);
+
+function handleHideEasyToggle() {
   prefs.hideEasy = !prefs.hideEasy;
   saveStorage();
   rebuildOrder(true);
   render();
-});
+}
+document.getElementById('hideEasyBtn').addEventListener('click', handleHideEasyToggle);
+document.getElementById('hideEasyBtnMobile').addEventListener('click', handleHideEasyToggle);
+
+function openMobileSheet() {
+  document.getElementById('mobileSheet').classList.add('open');
+  document.getElementById('mobileSheetBackdrop').classList.add('show');
+}
+function closeMobileSheet() {
+  document.getElementById('mobileSheet').classList.remove('open');
+  document.getElementById('mobileSheetBackdrop').classList.remove('show');
+}
+document.getElementById('mobileMenuBtn').addEventListener('click', openMobileSheet);
+document.getElementById('mobileSheetClose').addEventListener('click', closeMobileSheet);
+document.getElementById('mobileSheetBackdrop').addEventListener('click', closeMobileSheet);
+
+MOBILE_QUERY.addEventListener('change', () => { closeMobileSheet(); closeSidebar(); render(); });
 
 document.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase();
@@ -1015,7 +1283,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === ' ') {
     e.preventDefault();
-    if (!state.revealed && (prefs.mode === 'quick' || prefs.mode === 'imageonly')) { state.revealed = true; renderCard(); }
+    if (!state.revealed && (prefs.mode === 'quick' || prefs.mode === 'imageonly')) { state.revealed = true; render(); }
     else goNext();
   } else if (e.key === 'ArrowRight') {
     goNext();
@@ -1023,6 +1291,7 @@ document.addEventListener('keydown', (e) => {
     goPrev();
   } else if (e.key === 'Escape') {
     closeSidebar();
+    closeMobileSheet();
   } else if (e.key.toLowerCase() === 's') {
     shuffleOrder();
   } else if (e.key.toLowerCase() === 'e') {
