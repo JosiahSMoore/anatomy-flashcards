@@ -255,7 +255,7 @@
   .grade.tough { border: 1px solid rgba(220,130,113,.4); color: var(--tough-text); }
   .grade.tough[aria-pressed="true"] { background: rgba(220,130,113,.18); border-color: rgba(220,130,113,.5); }
 
-  .prompt { font: 400 22px/1.4 var(--font-serif); color: var(--ink); max-width: 44ch; margin-bottom: 16px; }
+  .prompt { font: 400 17.6px/1.4 var(--font-serif); color: var(--ink); margin-bottom: 16px; }
   .prompt.dim { color: rgba(242,234,221,.6); }
 
   .plate-well {
@@ -285,6 +285,9 @@
 
   .answer-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
   .answer-term { font: 600 26px var(--font-serif); color: var(--ink); }
+  .result-icon { font-size: 22px; font-weight: 700; }
+  .result-icon.correct { color: var(--known-text); }
+  .result-icon.incorrect { color: var(--marker-red); }
   .mnemonic { font: italic 400 13.5px var(--font-serif); color: var(--known-text); margin-top: 2px; }
   .marker-note { font-style: italic; color: var(--marker-red); }
 
@@ -312,11 +315,6 @@
   .check-btn:disabled { opacity: .5; cursor: default; }
 
   .show-answer-row { margin-top: 16px; text-align: center; }
-  .hide-answer-link {
-    background: none; border: none; cursor: pointer; margin-top: 10px;
-    font: 500 12.5px var(--font-sans); color: var(--ink-45);
-  }
-  .hide-answer-link:hover { color: var(--accent); }
 
   .mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
   @media (max-width: 480px) { .mc-grid { grid-template-columns: 1fr; } }
@@ -394,7 +392,7 @@
   .mobile-navlink:hover { color: var(--accent); }
   .mobile-eyebrow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 
-  .mobile-body .prompt { font-size: 19px; }
+  .mobile-body .prompt { font-size: 15.2px; }
   .mobile-body .plate-well {
     width: calc(100% + 32px);
     margin-left: -16px; margin-right: -16px;
@@ -967,7 +965,6 @@ function renderFlipBottom(card) {
       <span class="answer-term">${escapeHtml(card.term)}</span>
     </div>
     ${card.mnemonic ? `<div class="mnemonic">${card.mnemonic}</div>` : ''}
-    <div class="show-answer-row"><button class="hide-answer-link" id="hideAnswerBtn">Hide answer</button></div>
   `;
 }
 
@@ -983,19 +980,16 @@ function renderTypeInBottom(card) {
       </div>
     `;
   }
-  const cls = state.typedCorrect ? 'correct' : 'incorrect';
+  const markIcon = state.typedCorrect
+    ? '<span class="result-icon correct">&#10003;</span>'
+    : '<span class="result-icon incorrect">&#10007;</span>';
   return `
     <div class="answer-line">
       <span class="answer-term">${escapeHtml(card.term)}</span>
+      ${markIcon}
       ${!state.typedCorrect ? `<span style="font:400 12.5px 'Work Sans',sans-serif;color:var(--ink-45)">you typed: <em>${escapeHtml(state.typedValue) || '(nothing)'}</em></span>` : ''}
     </div>
     ${card.mnemonic ? `<div class="mnemonic">${card.mnemonic}</div>` : ''}
-    <div class="answer-row">
-      <div class="answer-input-wrap">
-        <input type="text" class="${cls}" value="${escapeAttr(state.typedValue)}" disabled>
-      </div>
-      <button class="check-btn" disabled>Check</button>
-    </div>
   `;
 }
 
@@ -1078,14 +1072,6 @@ function attachMobileGradeRow(card) {
 function attachCardHandlers(card) {
   const showBtn = document.getElementById('showAnswerBtn');
   if (showBtn) showBtn.addEventListener('click', () => { state.revealed = true; render(); });
-
-  const hideBtn = document.getElementById('hideAnswerBtn');
-  if (hideBtn) hideBtn.addEventListener('click', () => {
-    state.revealed = false;
-    state.typedChecked = false;
-    if (state.mc) state.mc.selectedIndex = null;
-    render();
-  });
 
   const checkBtn = document.getElementById('checkBtn');
   const typeInput = document.getElementById('typeInput');
@@ -1295,7 +1281,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeSidebar();
     return;
   }
-  if (e.key === ' ') {
+  if (e.key === ' ' || e.key === 'Enter') {
     e.preventDefault();
     if (!state.revealed && (prefs.mode === 'quick' || prefs.mode === 'imageonly')) { state.revealed = true; render(); }
     else goNext();
