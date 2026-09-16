@@ -1277,7 +1277,13 @@ MOBILE_QUERY.addEventListener('change', () => { closeMobileSheet(); closeSidebar
 
 document.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase();
-  if (tag === 'select' || tag === 'input') {
+  // The answer input is autofocused so cards can be graded/typed without
+  // clicking in first — but that also swallows arrow-key navigation. Let
+  // arrows through only while the box is still empty, so typing an answer
+  // (which may itself use left/right to move the caret) isn't disrupted.
+  const isEmptyAnswerInput = tag === 'input' && e.target.id === 'typeInput' && e.target.value === '';
+  const arrowBypass = isEmptyAnswerInput && (e.key === 'ArrowLeft' || e.key === 'ArrowRight');
+  if ((tag === 'select' || tag === 'input') && !arrowBypass) {
     if (e.key === 'Escape') closeSidebar();
     return;
   }
@@ -1293,11 +1299,17 @@ document.addEventListener('keydown', (e) => {
     closeSidebar();
     closeMobileSheet();
   } else if (e.key.toLowerCase() === 's') {
+    // preventDefault on these: marking/shuffling can re-render and refocus a
+    // fresh (empty) answer input synchronously, and without this the browser
+    // would then insert this same keystroke's character into that new box.
+    e.preventDefault();
     shuffleOrder();
   } else if (e.key.toLowerCase() === 'e') {
+    e.preventDefault();
     const id = state.order[state.pos];
     if (id !== undefined) toggleMark(id, 'easy');
   } else if (e.key.toLowerCase() === 'h') {
+    e.preventDefault();
     const id = state.order[state.pos];
     if (id !== undefined) toggleMark(id, 'hard');
   }
