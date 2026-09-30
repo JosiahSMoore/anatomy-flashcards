@@ -654,11 +654,26 @@ const BUCKET_DEFS = [
       'Muscle — Clinical Correlates',
     ],
   },
+  {
+    name: 'Skeletal Tissue',
+    categories: [
+      'Skeletal Tissue — Cartilage', 'Skeletal Tissue — Bone Structure',
+      'Skeletal Tissue — Bone Cells & Matrix', 'Skeletal Tissue — Microscopic Anatomy',
+      'Skeletal Tissue — Ossification & Growth', 'Skeletal Tissue — Hormones & Clinical',
+    ],
+  },
+  {
+    name: 'Joints',
+    categories: [
+      'Joints — Classification', 'Joints — Fibrous & Cartilaginous', 'Joints — Synovial Structure',
+      'Joints — Movements', 'Joints — Synovial Joint Types', 'Joints — Knee',
+      'Joints — Injuries & Conditions',
+    ],
+  },
 ];
 // New buckets that should start OFF for first-time visitors (still toggleable
-// on manually) — currently just the muscular system deck, kept separate from
-// the original skeletal lab exam guide.
-const BUCKETS_OFF_BY_DEFAULT = new Set(['Muscular System']);
+// on manually) — kept separate from the original skeletal lab exam guide.
+const BUCKETS_OFF_BY_DEFAULT = new Set(['Muscular System', 'Skeletal Tissue', 'Joints']);
 const bucketedSoFar = new Set(BUCKET_DEFS.flatMap(b => b.categories));
 const histologyCats = ALL_CATEGORIES.filter(c => !bucketedSoFar.has(c));
 const BUCKETS = [
