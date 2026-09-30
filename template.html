@@ -1410,7 +1410,7 @@ let editorDrag = null; // {x, y, rect} while drawing a new box; read by one glob
 function parseBoxDivs(html) {
   if (!html) return [];
   const out = [];
-  const re = /left:\s*([\d.]+)%;\s*top:\s*([\d.]+)%;\s*width:\s*([\d.]+)%;\s*height:\s*([\d.]+)%;/g;
+  const re = /left:\s*(-?[\d.]+)%;\s*top:\s*(-?[\d.]+)%;\s*width:\s*(-?[\d.]+)%;\s*height:\s*(-?[\d.]+)%;/g;
   let m;
   while ((m = re.exec(html))) {
     out.push({ left: +m[1], top: +m[2], width: +m[3], height: +m[4] });
