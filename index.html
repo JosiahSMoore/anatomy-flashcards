@@ -446,6 +446,51 @@
   .mobile-sheet-section .segmented button:first-child { border-top: none; }
   .mobile-sheet-actions { display: flex; flex-direction: column; gap: 8px; }
   .mobile-sheet-actions .tbtn { width: 100%; justify-content: flex-start; }
+
+  /* ================= box editor (author-only content tool) ================= */
+  #app.editor-active .shell, #app.editor-active .mobile-shell { display: none !important; }
+  .editor-entry-btn { position: fixed; bottom: 18px; right: 18px; z-index: 80; }
+  .editor-shell { max-width: 1240px; margin: 0 auto; padding: 20px 16px 56px; }
+  .editor-topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .editor-topbar h1 { font: 600 22px var(--font-serif); margin: 0; color: var(--ink); }
+  .editor-save-note { font: 400 12px var(--font-sans); color: var(--ink-45); }
+  .editor-body { display: grid; grid-template-columns: 220px minmax(0,1fr) 300px; gap: 18px; align-items: start; }
+  .editor-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; padding: 14px; }
+  .editor-image-list { display: flex; flex-direction: column; gap: 2px; max-height: 74vh; overflow: auto; }
+  .editor-image-list button {
+    display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left;
+    background: transparent; border: none; border-radius: 5px; padding: 8px 9px; cursor: pointer;
+    font: 500 12.5px var(--font-sans); color: var(--ink-70);
+  }
+  .editor-image-list button:hover { background: var(--surface-raised); color: var(--ink); }
+  .editor-image-list button[aria-pressed="true"] { background: var(--accent-wash); color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
+  .editor-image-list .prog { font: 500 11px var(--font-mono); color: var(--ink-45); }
+  .editor-image-list button.all-done .prog { color: var(--known-text); }
+  .editor-canvas-wrap {
+    position: relative; width: 100%; max-width: 900px; margin: 0 auto;
+    background: var(--plate-bg); border-radius: 6px; overflow: hidden; cursor: crosshair; user-select: none;
+  }
+  .editor-canvas-wrap img { display: block; width: 100%; height: auto; pointer-events: none; }
+  .editor-box { position: absolute; box-sizing: border-box; background: rgba(255,235,59,.30); border: 2px solid #ffeb3b; }
+  .editor-box.is-selected { background: rgba(224,163,74,.35); border-color: var(--accent); }
+  .editor-box .box-del {
+    position: absolute; top: -9px; right: -9px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--marker-red); color: #fff; font: 700 11px var(--font-sans); line-height: 18px;
+    text-align: center; cursor: pointer; box-shadow: 0 0 0 2px var(--ground);
+  }
+  .editor-draw-rect { position: absolute; border: 2px dashed var(--accent); background: rgba(224,163,74,.18); pointer-events: none; }
+  .editor-hint { font: 400 12px var(--font-sans); color: var(--ink-45); margin-top: 10px; text-align: center; }
+  .editor-card-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .editor-card-count { font: 500 12px var(--font-mono); color: var(--ink-45); }
+  .editor-card-cat { font: 600 10.5px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .editor-card-def { font: 400 15px/1.5 var(--font-serif); color: var(--ink); margin-bottom: 10px; }
+  .editor-card-term { font: 600 18px var(--font-serif); color: var(--known-text); margin-bottom: 14px; }
+  .editor-card-status { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--font-mono); padding: 4px 9px; border-radius: 5px; margin-bottom: 12px; }
+  .editor-card-status.done { background: rgba(143,191,154,.16); color: var(--known-text); }
+  .editor-card-status.pending { background: rgba(220,130,113,.14); color: var(--tough-text); }
+  .editor-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .editor-actions .tbtn, .editor-actions .pill-primary, .editor-actions .pill-outline { width: 100%; justify-content: center; }
+  @media (max-width: 900px) { .editor-body { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -550,6 +595,8 @@
     <div class="mobile-segbar-row" id="mobileSegbar"></div>
     <div class="mobile-body" id="mobileBody"></div>
   </div>
+
+  <div id="editorRoot" style="display:none"></div>
 
 </div>
 
@@ -1295,6 +1342,7 @@ document.getElementById('mobileSheetBackdrop').addEventListener('click', closeMo
 MOBILE_QUERY.addEventListener('change', () => { closeMobileSheet(); closeSidebar(); render(); });
 
 document.addEventListener('keydown', (e) => {
+  if (editor.open) return;
   const tag = (e.target.tagName || '').toLowerCase();
   // The answer input is autofocused so cards can be graded/typed without
   // clicking in first — but that also swallows arrow-key navigation. Let
@@ -1333,6 +1381,395 @@ document.addEventListener('keydown', (e) => {
     if (id !== undefined) toggleMark(id, 'hard');
   }
 });
+
+/* ================= box editor (author-only content tool) =================
+ * Not part of the normal study flow. Opened via ?edit=1 in the URL, so
+ * classmates using the shared study link never see it. Lets you draw a
+ * shared library of label boxes for an image (once), then walk through
+ * every card that uses that image and pick which box is its answer. On
+ * assignment the card becomes type "occlusion": its blockers = every other
+ * box in the library (yellow), its termCss = just the selected box (green,
+ * per the CSS override that already handles occlusion styling). Deleting a
+ * box automatically reverts any card that pointed at it back to a plain
+ * type "marker" card with no image overlay.
+ * ========================================================================= */
+const EDIT_MODE = new URLSearchParams(location.search).has('edit');
+const EDITOR_DRAFT_KEY = 'apSkeletalLabGuide.editorDraft.v1';
+
+let editor = {
+  open: false,
+  image: null,
+  library: [],   // [{id, left, top, width, height}] percent coords, this image's full label set
+  nextBoxId: 1,
+  cardIds: [],
+  idx: 0,
+  selectedBoxId: null,
+};
+let editorDrag = null; // {x, y, rect} while drawing a new box; read by one global mouseup handler
+
+function parseBoxDivs(html) {
+  if (!html) return [];
+  const out = [];
+  const re = /left:\s*([\d.]+)%;\s*top:\s*([\d.]+)%;\s*width:\s*([\d.]+)%;\s*height:\s*([\d.]+)%;/g;
+  let m;
+  while ((m = re.exec(html))) {
+    out.push({ left: +m[1], top: +m[2], width: +m[3], height: +m[4] });
+  }
+  return out;
+}
+function boxKey(b) { return [b.left, b.top, b.width, b.height].map(n => n.toFixed(2)).join(','); }
+
+function imagesSummary() {
+  const byImage = new Map();
+  for (const c of CARDS) {
+    if (!c.image) continue;
+    if (!byImage.has(c.image)) byImage.set(c.image, { total: 0, done: 0 });
+    const s = byImage.get(c.image);
+    s.total++;
+    if (c.type === 'occlusion' && c.termCss) s.done++;
+  }
+  return [...byImage.entries()]
+    .map(([image, s]) => ({ image, ...s }))
+    .sort((a, b) => {
+      const aDone = a.done === a.total, bDone = b.done === b.total;
+      if (aDone !== bDone) return aDone ? 1 : -1;
+      return a.image.localeCompare(b.image);
+    });
+}
+
+function buildLibraryForImage(image) {
+  const seen = new Map();
+  for (const c of CARDS) {
+    if (c.image !== image || c.type !== 'occlusion') continue;
+    // termCss holds [own target box, tiny invisible term-star badge] — only
+    // the first is a real label box; the badge isn't part of the library.
+    const termBoxes = parseBoxDivs(c.termCss);
+    const boxes = (termBoxes.length ? [termBoxes[0]] : []).concat(parseBoxDivs(c.blockers));
+    for (const b of boxes) {
+      const k = boxKey(b);
+      if (!seen.has(k)) seen.set(k, b);
+    }
+  }
+  return [...seen.values()].map(b => ({ id: editor.nextBoxId++, ...b }));
+}
+
+function findCardTargetBoxKey(card) {
+  if (card.type !== 'occlusion' || !card.termCss) return null;
+  const boxes = parseBoxDivs(card.termCss);
+  return boxes.length ? boxKey(boxes[0]) : null;
+}
+
+function currentEditorCard() { return getCardById(editor.cardIds[editor.idx]); }
+
+function syncSelectedBoxToCard() {
+  const card = currentEditorCard();
+  if (!card) { editor.selectedBoxId = null; return; }
+  const key = findCardTargetBoxKey(card);
+  const match = key ? editor.library.find(b => boxKey(b) === key) : null;
+  editor.selectedBoxId = match ? match.id : null;
+}
+
+function renderBoxDiv(b, bg) {
+  return `<div style="position:absolute; left:${b.left}%; top:${b.top}%; width:${b.width}%; height:${b.height}%; background:${bg};"></div>`;
+}
+function renderStarDiv(b) {
+  const l = b.left + b.width * 0.4, t = b.top + 0.9;
+  return `<div class="term-star" style="position:absolute; left:${l.toFixed(1)}%; top:${t.toFixed(1)}%; width:2.2%; height:2.8%;"></div>`;
+}
+
+function recomputeBlockersForImage(image) {
+  const siblingCards = CARDS.filter(c => c.image === image && c.type === 'occlusion' && c.termCss);
+  for (const c of siblingCards) {
+    const ownKey = findCardTargetBoxKey(c);
+    const others = editor.library.filter(b => boxKey(b) !== ownKey);
+    c.blockers = others.map(b => renderBoxDiv(b, '#ffeb3b')).join('');
+  }
+}
+
+function commitAssignment(boxId) {
+  const card = currentEditorCard();
+  const box = editor.library.find(b => b.id === boxId);
+  if (!card || !box) return;
+  card.type = 'occlusion';
+  card.termCss = renderBoxDiv(box, '#4caf50') + renderStarDiv(box);
+  if (!card.whiteout) card.whiteout = '';
+  delete card.marker;
+  recomputeBlockersForImage(editor.image);
+  editor.selectedBoxId = boxId;
+  saveEditorDraft();
+  renderEditor();
+}
+
+function clearAssignment() {
+  const card = currentEditorCard();
+  if (!card) return;
+  card.type = 'marker';
+  card.marker = '';
+  delete card.termCss;
+  delete card.blockers;
+  delete card.whiteout;
+  recomputeBlockersForImage(editor.image);
+  editor.selectedBoxId = null;
+  saveEditorDraft();
+  renderEditor();
+}
+
+function addBoxToLibrary(box) {
+  const b = { id: editor.nextBoxId++, ...box };
+  editor.library.push(b);
+  recomputeBlockersForImage(editor.image);
+  saveEditorDraft();
+  return b;
+}
+
+function removeBoxFromLibrary(boxId) {
+  const box = editor.library.find(b => b.id === boxId);
+  if (!box) return;
+  const key = boxKey(box);
+  for (const c of CARDS) {
+    if (c.image !== editor.image || c.type !== 'occlusion') continue;
+    if (findCardTargetBoxKey(c) === key) {
+      c.type = 'marker';
+      c.marker = '';
+      delete c.termCss;
+      delete c.blockers;
+      delete c.whiteout;
+    }
+  }
+  editor.library = editor.library.filter(b => b.id !== boxId);
+  recomputeBlockersForImage(editor.image);
+  if (editor.selectedBoxId === boxId) editor.selectedBoxId = null;
+  saveEditorDraft();
+  renderEditor();
+}
+
+function saveEditorDraft() {
+  try { localStorage.setItem(EDITOR_DRAFT_KEY, JSON.stringify(CARDS)); } catch (e) { /* storage unavailable */ }
+}
+function loadEditorDraft() {
+  try {
+    const raw = localStorage.getItem(EDITOR_DRAFT_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data) && data.length === CARDS.length) {
+      CARDS.length = 0;
+      CARDS.push(...data);
+    }
+  } catch (e) { /* ignore corrupt draft */ }
+}
+function downloadCardsJson() {
+  const blob = new Blob([JSON.stringify(CARDS)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cards.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function openEditorImage(image) {
+  const summary = imagesSummary().find(s => s.image === image);
+  if (summary && summary.done === summary.total) {
+    const msg = 'Every card on this image is already assigned. Reopening it here ' +
+      'rebuilds its box library from the existing data and will resync blocker ' +
+      'boxes for all ' + summary.total + ' cards that share it — safe for cards ' +
+      'built with this tool, but this image may predate it. Continue?';
+    if (!confirm(msg)) return;
+  }
+  editor.image = image;
+  editor.library = buildLibraryForImage(image);
+  editor.cardIds = CARDS.filter(c => c.image === image).map(c => c.id);
+  editor.idx = 0;
+  syncSelectedBoxToCard();
+  renderEditor();
+}
+
+function openEditor() {
+  editor.open = true;
+  document.getElementById('app').classList.add('editor-active');
+  document.getElementById('editorRoot').style.display = 'block';
+  document.getElementById('editorEntryBtn').style.display = 'none';
+  editor.image = null;
+  renderEditor();
+}
+function closeEditor() {
+  editor.open = false;
+  editor.image = null;
+  document.getElementById('app').classList.remove('editor-active');
+  document.getElementById('editorRoot').style.display = 'none';
+  document.getElementById('editorEntryBtn').style.display = '';
+  render();
+}
+
+function renderImagePickerRows() {
+  return imagesSummary().map(s => `
+    <button type="button" data-image="${escapeAttr(s.image)}" aria-pressed="${s.image === editor.image}" class="${s.done === s.total ? 'all-done' : ''}">
+      <span>${escapeHtml(s.image)}</span><span class="prog">${s.done}/${s.total}</span>
+    </button>`).join('');
+}
+
+function renderEditor() {
+  const root = document.getElementById('editorRoot');
+  root.innerHTML = editor.image ? renderEditorWorkspace() : renderEditorPicker();
+  attachEditorHandlers();
+}
+
+function renderEditorPicker() {
+  return `
+    <div class="editor-shell">
+      <div class="editor-topbar">
+        <h1>Box Editor</h1>
+        <span class="editor-save-note">Pick an image to draw label boxes and assign card answers.</span>
+        <div style="flex:1"></div>
+        <button class="tbtn" id="editorDownloadBtn">Download cards.json</button>
+        <button class="tbtn" id="editorExitBtn">Exit Editor</button>
+      </div>
+      <div class="editor-panel" style="max-width:640px;margin:0 auto;">
+        <div class="editor-image-list">${renderImagePickerRows()}</div>
+      </div>
+    </div>`;
+}
+
+function renderEditorWorkspace() {
+  const card = currentEditorCard();
+  const src = IMAGES[editor.image] || '';
+  const boxesHtml = editor.library.map(b => `
+    <div class="editor-box ${b.id === editor.selectedBoxId ? 'is-selected' : ''}" data-box-id="${b.id}"
+      style="left:${b.left}%; top:${b.top}%; width:${b.width}%; height:${b.height}%;">
+      <span class="box-del" data-del-box-id="${b.id}" title="Delete box">&times;</span>
+    </div>`).join('');
+
+  const done = !!(card && card.type === 'occlusion' && card.termCss);
+  const statusHtml = card
+    ? `<span class="editor-card-status ${done ? 'done' : 'pending'}">${done ? 'Assigned' : 'Needs a box'}</span>`
+    : '';
+  const cardPanel = card ? `
+      <div class="editor-card-nav">
+        <button class="pill-outline" id="editorPrevCard" ${editor.idx === 0 ? 'disabled' : ''}>&lsaquo; Prev</button>
+        <span class="editor-card-count">Card ${editor.idx + 1} / ${editor.cardIds.length}</span>
+        <button class="pill-outline" id="editorNextCard" ${editor.idx === editor.cardIds.length - 1 ? 'disabled' : ''}>Next &rsaquo;</button>
+      </div>
+      ${statusHtml}
+      <div class="editor-card-cat">${escapeHtml(card.category)}</div>
+      <div class="editor-card-def">${card.definition || ''}</div>
+      <div class="editor-card-term">${escapeHtml(card.term)}</div>
+      <div class="editor-actions">
+        <button class="pill-primary" id="editorAssignBtn" ${editor.selectedBoxId ? '' : 'disabled'}>Set selected box as answer</button>
+        <button class="pill-outline" id="editorClearBtn" ${done ? '' : 'disabled'}>Clear this card's assignment</button>
+      </div>
+    ` : '<p class="editor-hint">No cards use this image.</p>';
+
+  return `
+    <div class="editor-shell">
+      <div class="editor-topbar">
+        <h1>Box Editor — ${escapeHtml(editor.image)}</h1>
+        <span class="editor-save-note">Autosaved to this browser as you go.</span>
+        <div style="flex:1"></div>
+        <button class="tbtn" id="editorDownloadBtn">Download cards.json</button>
+        <button class="tbtn" id="editorExitBtn">Exit Editor</button>
+      </div>
+      <div class="editor-body">
+        <div class="editor-panel">
+          <div class="editor-image-list">${renderImagePickerRows()}</div>
+        </div>
+        <div>
+          <div class="editor-canvas-wrap" id="editorCanvas">
+            <img src="${src}" alt="">
+            ${boxesHtml}
+          </div>
+          <p class="editor-hint">Click-drag on the image to draw a new box. Click a box to select it, then "Set selected box as answer". Click &times; to delete a box.</p>
+        </div>
+        <div class="editor-panel">${cardPanel}</div>
+      </div>
+    </div>`;
+}
+
+function attachEditorHandlers() {
+  document.getElementById('editorDownloadBtn').addEventListener('click', downloadCardsJson);
+  document.getElementById('editorExitBtn').addEventListener('click', closeEditor);
+  document.querySelectorAll('#editorRoot .editor-image-list button').forEach(btn => {
+    btn.addEventListener('click', () => openEditorImage(btn.dataset.image));
+  });
+
+  const canvas = document.getElementById('editorCanvas');
+  if (!canvas) return;
+
+  canvas.querySelectorAll('.editor-box').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('box-del')) return;
+      editor.selectedBoxId = Number(el.dataset.boxId);
+      renderEditor();
+    });
+  });
+  canvas.querySelectorAll('.box-del').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('Delete this box? Any card currently targeting it reverts to an unassigned card.')) {
+        removeBoxFromLibrary(Number(el.dataset.delBoxId));
+      }
+    });
+  });
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.editor-box')) return;
+    editorDrag = { x: e.clientX, y: e.clientY, rect: canvas.getBoundingClientRect() };
+    const marker = document.createElement('div');
+    marker.className = 'editor-draw-rect';
+    marker.id = 'editorDrawRect';
+    canvas.appendChild(marker);
+  });
+
+  document.getElementById('editorPrevCard')?.addEventListener('click', () => { editor.idx--; syncSelectedBoxToCard(); renderEditor(); });
+  document.getElementById('editorNextCard')?.addEventListener('click', () => { editor.idx++; syncSelectedBoxToCard(); renderEditor(); });
+  document.getElementById('editorAssignBtn')?.addEventListener('click', () => commitAssignment(editor.selectedBoxId));
+  document.getElementById('editorClearBtn')?.addEventListener('click', clearAssignment);
+}
+
+if (EDIT_MODE) {
+  loadEditorDraft();
+  const entryBtn = document.createElement('button');
+  entryBtn.className = 'pill-primary editor-entry-btn';
+  entryBtn.id = 'editorEntryBtn';
+  entryBtn.textContent = 'Edit Boxes';
+  entryBtn.addEventListener('click', openEditor);
+  document.body.appendChild(entryBtn);
+
+  // Registered once (not per-render) since these track a drag that can
+  // continue past the canvas element being replaced by the next renderEditor().
+  document.addEventListener('mousemove', (e) => {
+    if (!editorDrag) return;
+    const marker = document.getElementById('editorDrawRect');
+    if (!marker) return;
+    const r = editorDrag.rect;
+    const x0 = Math.min(editorDrag.x, e.clientX), x1 = Math.max(editorDrag.x, e.clientX);
+    const y0 = Math.min(editorDrag.y, e.clientY), y1 = Math.max(editorDrag.y, e.clientY);
+    marker.style.left = (x0 - r.left) + 'px';
+    marker.style.top = (y0 - r.top) + 'px';
+    marker.style.width = (x1 - x0) + 'px';
+    marker.style.height = (y1 - y0) + 'px';
+  });
+  document.addEventListener('mouseup', (e) => {
+    if (!editorDrag) return;
+    const r = editorDrag.rect;
+    document.getElementById('editorDrawRect')?.remove();
+    const x0 = Math.min(editorDrag.x, e.clientX), x1 = Math.max(editorDrag.x, e.clientX);
+    const y0 = Math.min(editorDrag.y, e.clientY), y1 = Math.max(editorDrag.y, e.clientY);
+    editorDrag = null;
+    const w = x1 - x0, h = y1 - y0;
+    if (w < 6 || h < 6) return;
+    const box = {
+      left: +(((x0 - r.left) / r.width) * 100).toFixed(2),
+      top: +(((y0 - r.top) / r.height) * 100).toFixed(2),
+      width: +((w / r.width) * 100).toFixed(2),
+      height: +((h / r.height) * 100).toFixed(2),
+    };
+    const created = addBoxToLibrary(box);
+    editor.selectedBoxId = created.id;
+    renderEditor();
+  });
+}
 
 rebuildOrder(false);
 render();
