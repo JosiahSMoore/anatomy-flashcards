@@ -597,18 +597,36 @@ const BUCKET_DEFS = [
       'Fibula', 'Tarsals', 'Knee Joint',
     ],
   },
+  {
+    name: 'Muscular System',
+    categories: [
+      'Muscle — Connective Tissue & Hierarchy', 'Muscle — Fiber Anatomy', 'Muscle — Sarcomere',
+      'Muscle — Filament Proteins', 'Muscle — Neuromuscular Junction',
+      'Muscle — E-C Coupling & Cross-Bridge Cycle', 'Muscle — Motor Units & Force',
+      'Muscle — Energy & Fiber Types', 'Muscle — Muscle Tissue Types', 'Muscle — Fatigue & EMG',
+      'Muscle — Clinical Correlates',
+    ],
+  },
 ];
+// New buckets that should start OFF for first-time visitors (still toggleable
+// on manually) — currently just the muscular system deck, kept separate from
+// the original skeletal lab exam guide.
+const BUCKETS_OFF_BY_DEFAULT = new Set(['Muscular System']);
 const bucketedSoFar = new Set(BUCKET_DEFS.flatMap(b => b.categories));
 const histologyCats = ALL_CATEGORIES.filter(c => !bucketedSoFar.has(c));
 const BUCKETS = [
   ...BUCKET_DEFS.map(b => ({ name: b.name, categories: b.categories.filter(c => ALL_CATEGORIES.includes(c)) })),
   { name: 'Histology', categories: histologyCats },
 ].filter(b => b.categories.length);
+const categoriesOffByDefault = new Set(
+  BUCKETS.filter(b => BUCKETS_OFF_BY_DEFAULT.has(b.name)).flatMap(b => b.categories)
+);
+const DEFAULT_ACTIVE_CATEGORIES = ALL_CATEGORIES.filter(c => !categoriesOffByDefault.has(c));
 
 let marks = {}; // id -> 'easy' | 'hard'
 let prefs = {
   mode: 'typein',
-  activeCategories: ALL_CATEGORIES.slice(),
+  activeCategories: DEFAULT_ACTIVE_CATEGORIES.slice(),
   hideEasy: true,
   toughOnly: false,
   expandedBuckets: [],
@@ -624,9 +642,9 @@ function loadStorage() {
       Object.assign(prefs, data.prefs);
       if (Array.isArray(prefs.activeCategories)) {
         prefs.activeCategories = prefs.activeCategories.filter(c => ALL_CATEGORIES.includes(c));
-        if (!prefs.activeCategories.length) prefs.activeCategories = ALL_CATEGORIES.slice();
+        if (!prefs.activeCategories.length) prefs.activeCategories = DEFAULT_ACTIVE_CATEGORIES.slice();
       } else {
-        prefs.activeCategories = ALL_CATEGORIES.slice();
+        prefs.activeCategories = DEFAULT_ACTIVE_CATEGORIES.slice();
       }
       if (Array.isArray(prefs.expandedBuckets)) {
         const bucketNames = new Set(BUCKETS.map(b => b.name));
@@ -740,6 +758,7 @@ function renderMarkerImage(card) {
   </div>`;
 }
 function renderImage(card, revealed) {
+  if (!card.image) return '';
   return card.type === 'occlusion' ? renderOcclusionImage(card, revealed) : renderMarkerImage(card);
 }
 
